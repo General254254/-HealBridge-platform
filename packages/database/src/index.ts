@@ -1,5 +1,5 @@
-export * from './generated';
-import { PrismaClient } from './generated';
+export * from './generated/index.js';
+import { PrismaClient } from './generated/index.js';
 
 // Singleton pattern for Prisma Client
 const globalForPrisma = globalThis as unknown as {

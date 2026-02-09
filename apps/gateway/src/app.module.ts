@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
@@ -29,6 +30,9 @@ import { PrismaModule } from './prisma/prisma.module';
                 limit: 100,
             },
         ]),
+        ConfigModule.forRoot({
+            isGlobal: true,
+        }),
         PrismaModule,
         AuthModule,
         UsersModule,
