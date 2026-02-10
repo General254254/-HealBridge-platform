@@ -31,6 +31,7 @@ export default function ResourcesPage() {
     const [resources, setResources] = useState<Resource[]>([]);
     const [bookmarks, setBookmarks] = useState<string[]>([]);
     const [search, setSearch] = useState('');
+    const [category, setCategory] = useState('all');
     const [filter, setFilter] = useState('all');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -48,12 +49,13 @@ export default function ResourcesPage() {
             loadResources();
         }, 300);
         return () => clearTimeout(timeout);
-    }, [search, filter]);
+    }, [search, filter, category]);
 
     const loadResources = async () => {
         try {
             const params: any = {};
             if (filter !== 'all') params.type = filter;
+            if (category !== 'all') params.category = category;
             if (search) params.search = search;
 
             const { data } = await api.get('/resources', { params });
@@ -94,8 +96,8 @@ export default function ResourcesPage() {
             <p className="text-calm-500 mb-8">Curated, verified health resources from trusted institutions.</p>
 
             {/* Search & Filter */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-8">
-                <div className="relative flex-1">
+            <div className="space-y-4 mb-8">
+                <div className="relative">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-calm-400" />
                     <input
                         type="text"
@@ -105,19 +107,39 @@ export default function ResourcesPage() {
                         placeholder="Search resources..."
                     />
                 </div>
-                <div className="flex gap-2">
-                    {['all', 'ARTICLE', 'VIDEO', 'PDF'].map((type) => (
-                        <button
-                            key={type}
-                            onClick={() => setFilter(type)}
-                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filter === type
-                                ? 'bg-primary-600 text-white shadow-sm'
-                                : 'bg-white text-calm-500 border border-calm-200 hover:bg-calm-50'
-                                }`}
-                        >
-                            {type === 'all' ? 'All' : type.charAt(0) + type.slice(1).toLowerCase() + 's'}
-                        </button>
-                    ))}
+
+                <div className="flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-semibold text-calm-400 uppercase tracking-wider mr-2">Condition:</span>
+                        {['all', 'CANCER', 'TOURETTE', 'LYME'].map((cat) => (
+                            <button
+                                key={cat}
+                                onClick={() => setCategory(cat)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${category === cat
+                                    ? 'bg-primary-600 text-white shadow-sm'
+                                    : 'bg-white text-calm-500 border border-calm-200 hover:bg-calm-50'
+                                    }`}
+                            >
+                                {cat === 'all' ? 'All Conditions' : cat.charAt(0) + cat.slice(1).toLowerCase()}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-semibold text-calm-400 uppercase tracking-wider mr-2">Format:</span>
+                        {['all', 'ARTICLE', 'VIDEO', 'PDF'].map((type) => (
+                            <button
+                                key={type}
+                                onClick={() => setFilter(type)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filter === type
+                                    ? 'bg-primary-600 text-white shadow-sm'
+                                    : 'bg-white text-calm-500 border border-calm-200 hover:bg-calm-50'
+                                    }`}
+                            >
+                                {type === 'all' ? 'All Formats' : type.charAt(0) + type.slice(1).toLowerCase() + 's'}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 

@@ -9,13 +9,17 @@ export class ResourcesService {
         const skip = (page - 1) * limit;
         const where: any = { isVerified: true };
 
-        if (filters?.category) {
+        if (filters?.category && filters.category !== 'all') {
             where.conditions = {
-                some: { condition: { category: filters.category } },
+                some: {
+                    condition: {
+                        category: filters.category.toUpperCase() as any
+                    }
+                },
             };
         }
 
-        if (filters?.type) {
+        if (filters?.type && filters.type !== 'all') {
             where.contentType = filters.type;
         }
 

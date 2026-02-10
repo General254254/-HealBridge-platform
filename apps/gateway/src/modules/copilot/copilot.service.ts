@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { GoogleGenerativeAI, Part } from '@google/generative-ai';
 import { PrismaService } from '../../prisma/prisma.service';
 
 const SYSTEM_PROMPT = `You are HealBridge AI, a supportive health companion. Your role is to:
@@ -24,7 +25,17 @@ const DISCLAIMER = '⚕️ This information is for educational purposes only and
 
 @Injectable()
 export class CopilotService {
-    constructor(private readonly prisma: PrismaService) { }
+    private genAI: GoogleGenerativeAI;
+    private model: any;
+
+    constructor(private readonly prisma: PrismaService) {
+        const apiKey = process.env.GOOGLE_AI_API_KEY || '';
+        this.genAI = new GoogleGenerativeAI(apiKey);
+        this.model = this.genAI.getGenerativeModel({
+            model: 'gemini-2.5-flash', // Verified active model
+            systemInstruction: SYSTEM_PROMPT,
+        });
+    }
 
     async chat(userId: string, message: string, conversationId?: string): Promise<any> {
         // Get or create conversation
@@ -59,9 +70,8 @@ export class CopilotService {
             { role: 'user', content: message },
         ];
 
-        // Call the AI API (OpenAI-compatible)
-        // In production, replace with actual API call
-        const aiResponse = await this.callAI(messages);
+        // Call the AI API (Gemini)
+        const aiResponse = await this.callAI(messages, userContext);
 
         // Store the conversation
         const newMessages = [
@@ -147,34 +157,35 @@ export class CopilotService {
         return { message: 'Conversation deleted' };
     }
 
-    private async callAI(messages: { role: string; content: string }[]): Promise<string> {
-        const apiKey = process.env.OPENAI_API_KEY;
+    private async callAI(messages: { role: string; content: string }[], userContext: string): Promise<string> {
+        const apiKey = process.env.GOOGLE_AI_API_KEY;
 
-        if (!apiKey) {
-            // Fallback for development
-            return `I understand you're looking for health information. ${DISCLAIMER}\n\nPlease configure the OPENAI_API_KEY environment variable to enable AI responses.`;
+        if (!apiKey || apiKey === 'sk-...') {
+            return `I understand you're looking for health information. ${DISCLAIMER}\n\nPlease configure the GOOGLE_AI_API_KEY environment variable to enable AI responses.`;
         }
 
         try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${apiKey}`,
-                },
-                body: JSON.stringify({
-                    model: 'gpt-4',
-                    messages,
-                    max_tokens: 1000,
-                    temperature: 0.7,
-                }),
+            // Conversion to Gemini format
+            const history = messages
+                .filter(m => m.role !== 'system')
+                .map(m => ({
+                    role: m.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: m.content }],
+                }));
+
+            const chat = this.model.startChat({
+                history: history.slice(0, -1),
             });
 
-            const data = await response.json();
-            return data.choices[0].message.content;
+            const lastMessage = messages[messages.length - 1].content;
+            const prompt = userContext ? `[Context: ${userContext}]\n\n${lastMessage}` : lastMessage;
+
+            const result = await chat.sendMessage(prompt);
+            const response = await result.response;
+            return response.text();
         } catch (error) {
-            console.error('AI API error:', error);
-            return `I apologize, but I'm having trouble connecting right now. Please try again later. ${DISCLAIMER}`;
+            console.error('Gemini AI error:', error);
+            return `I apologize, but I'm having trouble connecting to my knowledge base right now. Please try again later. ${DISCLAIMER}`;
         }
     }
 }
