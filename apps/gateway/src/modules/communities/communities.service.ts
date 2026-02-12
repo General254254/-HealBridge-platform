@@ -134,7 +134,15 @@ export class CommunitiesService {
             data: { viewCount: { increment: 1 } },
         });
 
-        return thread;
+        return {
+            ...thread,
+            author: {
+                id: thread.author.id,
+                displayName: thread.author.profile?.displayName ?? 'Anonymous',
+                avatarUrl: thread.author.profile?.avatarUrl,
+                isSurvivor: thread.author.profile?.isSurvivor ?? false,
+            },
+        };
     }
 
     // ---- Posts ----
