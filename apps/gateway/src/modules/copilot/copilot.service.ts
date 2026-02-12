@@ -183,8 +183,11 @@ export class CopilotService {
             const result = await chat.sendMessage(prompt);
             const response = await result.response;
             return response.text();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Gemini AI error:', error);
+            if (error.message?.includes('429') || error.message?.includes('quota')) {
+                return `I apologize, but I've reached my message limit for the moment. Please try again in a few minutes. ${DISCLAIMER}`;
+            }
             return `I apologize, but I'm having trouble connecting to my knowledge base right now. Please try again later. ${DISCLAIMER}`;
         }
     }
