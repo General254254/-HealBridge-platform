@@ -29,7 +29,13 @@
                 "^build"
             ]
         },
+        "db:push": {
+            "cache": false
+        },
         "start": {
+            "dependsOn": [
+                "^db:push"
+            ],
             "cache": false,
             "persistent": true
         }
