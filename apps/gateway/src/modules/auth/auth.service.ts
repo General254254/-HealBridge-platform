@@ -15,7 +15,7 @@ export class AuthService {
         private readonly jwtService: JwtService,
     ) { }
 
-    async register(email: string, password: string, displayName: string) {
+    async register(email: string, password: string, displayName: string, primaryConditionId?: string) {
         // Check if user already exists
         const existingUser = await this.prisma.user.findUnique({ where: { email } });
         if (existingUser) {
@@ -33,6 +33,7 @@ export class AuthService {
                 profile: {
                     create: {
                         displayName,
+                        primaryConditionId: primaryConditionId || null,
                     },
                 },
             },

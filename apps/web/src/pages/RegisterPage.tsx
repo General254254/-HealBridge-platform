@@ -1,20 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import api from '../lib/api';
-import { Heart, Mail, Lock, User } from 'lucide-react';
+import { Heart, Mail, Lock, User, Activity } from 'lucide-react';
 
 export default function RegisterPage() {
     const [displayName, setDisplayName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [primaryConditionId, setPrimaryConditionId] = useState('');
+    const [conditions, setConditions] = useState<any[]>([]);
     const [acceptTerms, setAcceptTerms] = useState(false);
     const [acceptDisclaimer, setAcceptDisclaimer] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const setAuth = useAuthStore((s) => s.setAuth);
+
+    useEffect(() => {
+        const fetchConditions = async () => {
+            try {
+                const { data } = await api.get('/categories');
+                // Flatten categories object into a single array of conditions
+                const allConditions = Object.values(data).flat();
+                setConditions(allConditions as any[]);
+            } catch (err) {
+                console.error('Failed to load conditions');
+            }
+        };
+        fetchConditions();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,7 +49,12 @@ export default function RegisterPage() {
         setLoading(true);
 
         try {
-            const { data } = await api.post('/auth/register', { email, password, displayName });
+            const { data } = await api.post('/auth/register', {
+                email,
+                password,
+                displayName,
+                primaryConditionId: primaryConditionId || undefined
+            });
             setAuth(data.user, data.accessToken, data.refreshToken);
             navigate('/dashboard');
         } catch (err: any) {
@@ -90,6 +111,23 @@ export default function RegisterPage() {
                                     placeholder="you@example.com"
                                     required
                                 />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-calm-700 mb-1.5">Primary Condition (Optional)</label>
+                            <div className="relative">
+                                <Activity className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-calm-400" />
+                                <select
+                                    value={primaryConditionId}
+                                    onChange={(e) => setPrimaryConditionId(e.target.value)}
+                                    className="input-field pl-10 appearance-none bg-white"
+                                >
+                                    <option value="">Select your condition</option>
+                                    {conditions.map((c) => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 

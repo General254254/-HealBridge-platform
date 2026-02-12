@@ -83,6 +83,37 @@ async function main() {
         console.log(`Created resource: ${resource.title}`);
     }
 
+    // 3. Forums & Threads
+    const conditions = [cancerCondition, lymeCondition, touretteCondition];
+    for (const condition of conditions) {
+        const forum = await prisma.forum.upsert({
+            where: { conditionId: condition.id },
+            update: {},
+            create: {
+                conditionId: condition.id,
+                name: `${condition.name} Support Group`,
+                description: `A safe space for people with ${condition.name} to share experiences and find support.`,
+                category: condition.category as any,
+            },
+        });
+
+        // Add an initial thread
+        await prisma.thread.create({
+            data: {
+                forumId: forum.id,
+                authorId: 'system', // or any valid user ID if available
+                title: `Welcome to the ${condition.name} forum!`,
+                content: `This is a community-driven space for support, advice, and connection regarding ${condition.name}. Please follow our community guidelines and be supportive of one another.`,
+                tags: ['welcome', 'support'],
+            },
+        }).catch(() => {
+            // Might fail if 'system' user doesn't exist, which is fine for seeding logic
+            console.warn(`Could not create welcome thread for ${condition.name} - Author ID mismatch?`);
+        });
+
+        console.log(`Created forum for: ${condition.name}`);
+    }
+
     console.log('✅ Seeding complete.');
 }
 

@@ -19,9 +19,9 @@ export class AuthController {
     @Post('register')
     @ApiOperation({ summary: 'Register a new user' })
     async register(
-        @Body() body: { email: string; password: string; displayName: string },
+        @Body() body: { email: string; password: string; displayName: string; primaryConditionId?: string },
     ) {
-        return this.authService.register(body.email, body.password, body.displayName);
+        return this.authService.register(body.email, body.password, body.displayName, body.primaryConditionId);
     }
 
     @Post('login')
